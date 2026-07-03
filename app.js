@@ -79,8 +79,8 @@ function handleFormSubmit(event) {
     // Save to storage
     saveSampleToStorage(sample);
     
-    // Update display
-    addSampleToTable(sample);
+    // Reload all samples to display correctly
+    loadSamplesFromStorage();
     updateStats();
     
     // Reset form
@@ -88,6 +88,7 @@ function handleFormSubmit(event) {
     setTodayDate();
     
     showAlert('✓ Sample added successfully!', 'success');
+    console.log('Sample saved:', sample);
 }
 
 function collectFormData() {
@@ -158,18 +159,24 @@ function saveSampleToStorage(sample) {
     let samples = getSamplesFromStorage();
     samples.push(sample);
     localStorage.setItem('sterlingGoldSamples', JSON.stringify(samples));
+    console.log('Saved to localStorage:', samples);
 }
 
 function getSamplesFromStorage() {
     const data = localStorage.getItem('sterlingGoldSamples');
-    return data ? JSON.parse(data) : [];
+    const samples = data ? JSON.parse(data) : [];
+    console.log('Retrieved from localStorage:', samples);
+    return samples;
 }
 
 function loadSamplesFromStorage() {
     const samples = getSamplesFromStorage();
     const tbody = document.getElementById('samplesTableBody');
     tbody.innerHTML = '';
-    samples.forEach(sample => addSampleToTable(sample));
+    
+    samples.forEach((sample, index) => {
+        addSampleToTable(sample, index);
+    });
 }
 
 function deleteSampleFromStorage(index) {
@@ -198,9 +205,8 @@ function clearAllData() {
 // TABLE FUNCTIONS
 // ====================================
 
-function addSampleToTable(sample) {
+function addSampleToTable(sample, index) {
     const tbody = document.getElementById('samplesTableBody');
-    const index = getSamplesFromStorage().findIndex(s => s.timestamp === sample.timestamp);
     
     const row = document.createElement('tr');
     row.innerHTML = `
@@ -212,10 +218,10 @@ function addSampleToTable(sample) {
         <td>${parseFloat(sample.assumedGrade).toFixed(2)}</td>
         <td>${parseFloat(sample.assayResults).toFixed(2)}</td>
         <td>${sample.geoLat.toFixed(4)}, ${sample.geoLon.toFixed(4)}</td>
-        <td><strong>${sample.auContent.toFixed(2)}</strong></td>
-        <td>$${sample.goldValue.toFixed(2)}</td>
-        <td>$${sample.totalCost.toFixed(2)}</td>
-        <td><strong>${sample.netValue > 0 ? '+' : ''}$${sample.netValue.toFixed(2)}</strong></td>
+        <td><strong>${parseFloat(sample.auContent).toFixed(2)}</strong></td>
+        <td>$${parseFloat(sample.goldValue).toFixed(2)}</td>
+        <td>$${parseFloat(sample.totalCost).toFixed(2)}</td>
+        <td><strong>${parseFloat(sample.netValue) > 0 ? '+' : ''}$${parseFloat(sample.netValue).toFixed(2)}</strong></td>
         <td title="${sample.commentary}">${sample.commentary.substring(0, 30)}${sample.commentary.length > 30 ? '...' : ''}</td>
         <td>
             <div class="action-buttons">
@@ -249,10 +255,10 @@ function updateStats() {
     }
     
     const totalSamples = samples.length;
-    const totalAuContent = samples.reduce((sum, s) => sum + s.auContent, 0);
-    const totalTonnage = samples.reduce((sum, s) => sum + s.tonnage, 0);
-    const avgGrade = samples.reduce((sum, s) => sum + s.assumedGrade, 0) / totalSamples;
-    const totalValue = samples.reduce((sum, s) => sum + s.goldValue, 0);
+    const totalAuContent = samples.reduce((sum, s) => sum + parseFloat(s.auContent), 0);
+    const totalTonnage = samples.reduce((sum, s) => sum + parseFloat(s.tonnage), 0);
+    const avgGrade = samples.reduce((sum, s) => sum + parseFloat(s.assumedGrade), 0) / totalSamples;
+    const totalValue = samples.reduce((sum, s) => sum + parseFloat(s.goldValue), 0);
     
     document.getElementById('totalSamples').textContent = totalSamples;
     document.getElementById('totalAuContent').textContent = totalAuContent.toFixed(2);
@@ -262,6 +268,14 @@ function updateStats() {
     
     // Update last updated timestamp
     updateLastModified();
+    
+    console.log('Stats updated:', {
+        totalSamples,
+        totalAuContent,
+        totalTonnage,
+        avgGrade,
+        totalValue
+    });
 }
 
 function resetStats() {
@@ -318,25 +332,25 @@ function generateDailyReport() {
 }
 
 function generateReportHTML(date, samples) {
-    const formatDate = new Date(date).toLocaleDateString('en-US', { 
+    const formatDateString = new Date(date).toLocaleDateString('en-US', { 
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
     });
     
-    const totalAu = samples.reduce((sum, s) => sum + s.auContent, 0);
-    const totalValue = samples.reduce((sum, s) => sum + s.goldValue, 0);
-    const totalCost = samples.reduce((sum, s) => sum + s.totalCost, 0);
-    const totalNet = samples.reduce((sum, s) => sum + s.netValue, 0);
-    const avgGrade = samples.reduce((sum, s) => sum + s.assumedGrade, 0) / samples.length;
-    const totalTonnage = samples.reduce((sum, s) => sum + s.tonnage, 0);
+    const totalAu = samples.reduce((sum, s) => sum + parseFloat(s.auContent), 0);
+    const totalValue = samples.reduce((sum, s) => sum + parseFloat(s.goldValue), 0);
+    const totalCost = samples.reduce((sum, s) => sum + parseFloat(s.totalCost), 0);
+    const totalNet = samples.reduce((sum, s) => sum + parseFloat(s.netValue), 0);
+    const avgGrade = samples.reduce((sum, s) => sum + parseFloat(s.assumedGrade), 0) / samples.length;
+    const totalTonnage = samples.reduce((sum, s) => sum + parseFloat(s.tonnage), 0);
     
     let html = `
         <div class="report-header">
             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Cdefs%3E%3Cstyle%3E.logo-text%7Bfont-family:cursive%3Bfont-size:48px%3Bfill:%23FF8C00%3B%7D.logo-sub%7Bfont-family:cursive%3Bfont-size:32px%3B%7D.gold%7Bfill:%23FFD700%3B%7D.mining%7Bfill:%23000%3B%7D%3C/style%3E%3C/defs%3E%3Ctext x='50' y='70' class='logo-text'%3ESterling%3C/text%3E%3Ctext x='80' y='110' class='logo-sub gold'%3EGold%3C/text%3E%3Ctext x='160' y='110' class='logo-sub mining'%3EMining%3C/text%3E%3Cline x1='80' y1='125' x2='280' y2='125' stroke='%23FF8C00' stroke-width='3'/%3E%3C/svg%3E" style="height: 60px; margin-bottom: 15px;">
             <h3>Daily Sample Collection Report</h3>
-            <p><strong>Report Date:</strong> ${formatDate}</p>
+            <p><strong>Report Date:</strong> ${formatDateString}</p>
             <p><strong>Location:</strong> 152 Aurora Processing Plant, Zimbabwe</p>
         </div>
         
@@ -365,10 +379,10 @@ function generateReportHTML(date, samples) {
                 <td>${sample.sampleID}</td>
                 <td>${parseFloat(sample.tonnage).toFixed(2)}</td>
                 <td>${parseFloat(sample.assayResults).toFixed(2)}</td>
-                <td><strong>${sample.auContent.toFixed(2)}</strong></td>
-                <td>$${sample.goldValue.toFixed(2)}</td>
-                <td>$${sample.totalCost.toFixed(2)}</td>
-                <td><strong class="${sample.netValue >= 0 ? 'text-success' : 'text-danger'}">${sample.netValue > 0 ? '+' : ''}$${sample.netValue.toFixed(2)}</strong></td>
+                <td><strong>${parseFloat(sample.auContent).toFixed(2)}</strong></td>
+                <td>$${parseFloat(sample.goldValue).toFixed(2)}</td>
+                <td>$${parseFloat(sample.totalCost).toFixed(2)}</td>
+                <td><strong class="${parseFloat(sample.netValue) >= 0 ? 'text-success' : 'text-danger'}">${parseFloat(sample.netValue) > 0 ? '+' : ''}$${parseFloat(sample.netValue).toFixed(2)}</strong></td>
             </tr>
         `;
     });

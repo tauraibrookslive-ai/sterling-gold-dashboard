@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sterling Gold - Sample Collection Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header Section -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 200'%3E%3Cdefs%3E%3Cstyle%3E.logo-text%7Bfont-family:cursive%3Bfont-size:48px%3Bfill:%23FF8C00%3B%7D.logo-sub%7Bfont-family:cursive%3Bfont-size:32px%3B%7D.gold%7Bfill:%23FFD700%3B%7D.mining%7Bfill:%23000%3B%7D%3C/style%3E%3C/defs%3E%3Ctext x='50' y='70' class='logo-text'%3ESterling%3C/text%3E%3Ctext x='80' y='110' class='logo-sub gold'%3EGold%3C/text%3E%3Ctext x='160' y='110' class='logo-sub mining'%3EMining%3C/text%3E%3Cline x1='80' y1='125' x2='280' y2='125' stroke='%23FF8C00' stroke-width='3'/%3E%3C/svg%3E" alt="Sterling Gold Logo" class="company-logo" id="companyLogo">
+                    <div class="company-info">
+                        <h1>Sterling Gold Geology Department</h1>
+                        <p class="address">📍 152 Aurora Processing Plant, Zimbabwe</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="date-selector">
+                        <label for="reportDate">Report Date:</label>
+                        <input type="date" id="reportDate" class="date-input">
+                    </div>
+                    <button class="btn btn-primary" onclick="generateDailyReport()">Generate Report</button>
+                    <button class="btn btn-success" onclick="exportToPDF()">📥 Download PDF</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-main">
+            <!-- Quick Stats -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <h3>Total Samples</h3>
+                    <p class="stat-value" id="totalSamples">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Au Content (g)</h3>
+                    <p class="stat-value" id="totalAuContent">0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Tonnage</h3>
+                    <p class="stat-value" id="totalTonnage">0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Avg Grade (%)</h3>
+                    <p class="stat-value" id="avgGrade">0.00</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Estimated Value</h3>
+                    <p class="stat-value" id="totalValue">$0.00</p>
+                </div>
+            </section>
+
+            <!-- Data Entry Form -->
+            <section class="form-section">
+                <h2>Add New Sample</h2>
+                <form id="sampleForm" class="sample-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sampleDate">Sample Date:</label>
+                            <input type="date" id="sampleDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mineName">Mine Name:</label>
+                            <input type="text" id="mineName" placeholder="Enter mine name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mineArea">Mine Area:</label>
+                            <input type="text" id="mineArea" placeholder="Enter mine area/zone" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sampleID">Sample ID:</label>
+                            <input type="text" id="sampleID" placeholder="Auto-generated or custom ID">
+                        </div>
+                        <div class="form-group">
+                            <label for="tonnage">Sampled Tonnage (tons):</label>
+                            <input type="number" id="tonnage" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="assumedGrade">Assumed Grade (%):</label>
+                            <input type="number" id="assumedGrade" step="0.01" placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="assayResults">Assay Results (g/ton):</label>
+                            <input type="number" id="assayResults" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="geoLat">Geo Coordinates - Latitude:</label>
+                            <input type="number" id="geoLat" step="0.0001" placeholder="-17.8252" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="geoLon">Geo Coordinates - Longitude:</label>
+                            <input type="number" id="geoLon" step="0.0001" placeholder="25.2637" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="samplePrice">Gold Price ($/oz):</label>
+                            <input type="number" id="samplePrice" step="0.01" placeholder="2000.00" value="2000.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="costPerTon">Cost/Ton ($):</label>
+                            <input type="number" id="costPerTon" step="0.01" placeholder="50.00" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row full-width">
+                        <div class="form-group full-width">
+                            <label for="commentary">Report Commentary:</label>
+                            <textarea id="commentary" placeholder="Enter any additional observations or notes..." rows="4"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">➕ Add Sample</button>
+                        <button type="reset" class="btn btn-secondary">Clear Form</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Samples Table -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h2>Sample Collection Records</h2>
+                    <div class="table-controls">
+                        <input type="text" id="searchInput" placeholder="Search samples..." class="search-box">
+                        <button class="btn btn-secondary" onclick="clearAllData()">🗑️ Clear All Data</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="samplesTable" class="samples-table">
+                        <thead>
+                            <tr>
+                                <th>Sample Date</th>
+                                <th>Mine Name</th>
+                                <th>Mine Area</th>
+                                <th>Sample ID</th>
+                                <th>Tonnage</th>
+                                <th>Grade (%)</th>
+                                <th>Assay (g/ton)</th>
+                                <th>Coordinates</th>
+                                <th>Au (g)</th>
+                                <th>Gold Value ($)</th>
+                                <th>Cost ($)</th>
+                                <th>Net Value ($)</th>
+                                <th>Commentary</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="samplesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Summary Report -->
+            <section class="report-section" id="reportSection">
+                <h2>Daily Summary Report</h2>
+                <div class="report-content" id="reportContent">
+                    <p style="text-align: center; color: #666;">Generate a daily report to view summary</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <p>&copy; 2024 Sterling Gold Geology Department. All Rights Reserved.</p>
+            <p>152 Aurora Processing Plant, Zimbabwe | Last Updated: <span id="lastUpdated">-</span></p>
+        </footer>
+    </div>
+
+    <!-- Hidden Print Section for PDF -->
+    <div id="printSection" style="display: none;"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
